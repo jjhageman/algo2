@@ -62,8 +62,22 @@ class MaxSpacing
       edge = @sorted_edges.shift
       merge_clusters edge.p1, edge.p2
     end
-    debugger
-    puts @sorted_edges.first.inspect
+
+    @sorted_edges.each do |e|
+      puts e.inspect
+      if cluster_connector?(e.p1,e.p2)
+        puts "Maximum spacing: #{e.distance}, between #{e.p1} and #{e.p2}"
+        puts "#{@clusters}"
+        break
+      end
+    end
+    #puts @sorted_edges.first.inspect
+  end
+
+  def cluster_connector?(p1,p2)
+    c1 = @clusters.detect{|c| c.points.member?(p1)}
+    c2 = @clusters.detect{|c| c.points.member?(p2)}
+    c1 != c2
   end
 
   def merge_clusters(p1,p2)
@@ -74,7 +88,7 @@ class MaxSpacing
       @clusters.delete(c1)
       @clusters.delete(c2)
       c = Cluster.new(points)
-      @clusters<<c
+      @clusters << c
     end
   end
 end
