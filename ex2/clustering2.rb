@@ -4,9 +4,10 @@ require 'set'
 require 'progressbar'
 
 class Node
-  attr_accessor :parent, :rank
+  attr_accessor :parent, :rank, :value
  
-  def initialize
+  def initialize(value)
+    @value = value
     @parent = self
     @rank = 0
   end
@@ -43,23 +44,35 @@ class Edge
 end
 
 class Clustering
-  attr :nodes, :bit_counts, :values, :edges, :small_cluster
+  attr :edges, :node_index
 
   def initialize(file)
     @file = file
-    @nodes=[]
-    @bit_counts = {}
+    #@nodes = []
     @size = 0
-    @values = Set.new
-    @small_cluster = Set.new
+    @node_index = {}
+    #@values = Set.new
     @edges = []
     init_nodes
     init_edges
   end
 
+  def cluster
+    pbar = ProgressBar.new("clustering", @edges.size)
+    @edges.each do |e|
+      n1 = @node_index[e.p1].first
+      n2 = @node_index[e.p2].first
+      unless n1.find == n2.find
+        n1.union(n2)
+      end
+      pbar.inc
+    end
+    pbar.finish
+  end
+
   def init_edges
-    pbar = ProgressBar.new("initializing edges", @nodes.size)
-    @nodes.each do |n|
+    pbar = ProgressBar.new("initializing edges", @node_index.size)
+    @node_index.keys.each do |n|
       dev = []
       n.size.times do |i|
         temp = String.new n
@@ -74,28 +87,10 @@ class Clustering
       end
 
       dev.each do |d|
-        if @values.member?(d)
-          @small_cluster.add(n)
-          @small_cluster.add(d)
+        if @node_index.has_key?(d)
           @edges << Edge.new(n,d,1)
         end
       end
-
-
-      #bits = n.to_s(2).count('1')
-      #for i in (bits-2)..(bits+2)
-        ##pbar2 = ProgressBar.new("initializing edges", @bit_counts[i].size)
-        #if @bit_counts[i]
-          #@bit_counts[i].each do |b|
-            #dist = int_distance(n,b)
-            #if dist <= 2
-              #@edges << Edge.new(n,b,dist)
-            #end
-            ##pbar2.inc
-          #end
-        #end
-        ##pbar2.finish
-      #end
       pbar.inc
     end
     pbar.finish
@@ -126,14 +121,14 @@ class Clustering
     pbar = ProgressBar.new("reading file", @size[0])
     csv.each do |row|
       str = row.compact.join
-      bits = str.count('1')
-      @values.add(str)
-      if @bit_counts[bits].nil?
-        @bit_counts[bits] = [str.to_i(2)]
+      node = Node.new(str)
+      if @node_index[str].nil?
+        @node_index[str] = [node]
       else
-        @bit_counts[bits] << str.to_i(2)
+        @node_index[str].first.union(node)
+        @node_index[str] << node
       end
-      @nodes << str
+      #@nodes << Node.new(str)
       pbar.inc
     end
     pbar.finish
@@ -141,5 +136,9 @@ class Clustering
 end
 
 c = Clustering.new('clustering2.txt')
+c.cluster
+p=Set.new
+c.node_index.each {|k,v| v.each {|x| p.add(x.parent)}}
+puts "#{p.size} clusters"
 debugger
 puts 'Done'
