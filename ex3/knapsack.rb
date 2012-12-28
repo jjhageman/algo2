@@ -5,35 +5,39 @@ require 'progressbar'
 
 class Knapsack
   # W: Knapsack capacity
-  attr :W, :V, :items
+  attr :W, :V
   def initialize(file)
     @file = file
     @w = [0]
     @v = [0]
-    @items = []
-    @V = [[]]
+    @V = {}
     read_data
   end
 
   def optimal
-    (0..@size).each {|r| @V[r] = []}
-    (0..@W).each {|w| @V[0][w]=0}
-debugger
-    pbar = ProgressBar.new("optimizing", @items.size)
-    (1..@items.size).each do |i|
-      (0..@W).each do |j|
-        if @w[i] <= j
-          p = @V[i-1][j]
-          n = @V[i-1][j-@w[i]]+@v[i]
-          @V[i][j] = (p > n) ? p : n
-        else
-          @V[i][j] = @V[i-1][j]
+    pbar = ProgressBar.new("optimizing", @size)
+
+    (1..@size).each do |i|
+      weight = @w[i]
+      value = @v[i]
+      new_weights = {}
+      @V.each do |k,v|
+        combo_weight = weight + k
+        v.each do |j|
+          new_weights[combo_weight] = [(value + j)] unless combo_weight > @W
         end
+      end
+      debugger if new_weights.nil?
+      @V.merge!(new_weights){|key, oldval, newval| oldval+newval} unless new_weights.nil?
+      if @V[weight]
+        @V[weight] << value
+      else
+        @V[weight] = [value]
       end
       pbar.inc
     end 
     pbar.finish
-    @V[@size][@W]
+    @V
   end
 
   def read_data
@@ -43,7 +47,6 @@ debugger
     csv.each do |row|
       @v << row[0]
       @w << row[1]
-      @items << row
       pbar.inc
     end
     pbar.finish
@@ -51,4 +54,7 @@ debugger
 end
 
 k=Knapsack.new('knapsack2.txt').optimal
-puts "Optimal solution #{k}"
+debugger
+highest_weight = k.keys.sort.last
+puts "Heightest weight = #{highest_weight}"
+puts "2595819 - Optimal solution #{k[highest_weight].sort.last}"
