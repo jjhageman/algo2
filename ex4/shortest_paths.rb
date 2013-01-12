@@ -95,7 +95,18 @@ class BellmanFord
       pbar.inc
     end
     pbar.finish
-    @d
+    negative_cycles? ? false : @d
+  end
+
+  def negative_cycles?
+    response = false
+    @edges.each do |e|
+      if @d[e.v] > (@d[e.u] + e.w)
+        response = true
+        break
+      end
+    end
+    response
   end
 end
 
@@ -137,7 +148,37 @@ class FloydWarshall
     @A
   end
 end
+
+class Johnson
+  def initialize(file)
+    @file = file
+    @edges = []
+    @vertices = Set.new
+    read_file
+  end
+
+  def read_file
+    csv = CSV.open(@file, 'r', col_sep: ' ', converters: :integer)
+    @num_vertices, @num_edges = csv.shift
+    pbar = ProgressBar.new("reading file", @num_edges)
+    csv.each do |row|
+      @vertices << row[0]
+      @vertices << row[1]
+      @edges << Edge.new(*row)
+      pbar.inc
+    end
+    pbar.finish
+  end
+
+  def shortest_paths
+    @gprime_vertices = @vertices.dup.add(9999)
+    @gprime_edges = @edges.dup
+    @vertices.each do |v|
+      @gprime_edges = Edge.new(v,9999,0)
+    end
+  end
+end
 #fw = FloydWarshall.new('test2.txt').shortest_paths
-bf = BellmanFord.new('g1.txt').shortest_paths(1)
-debugger
+#bf = BellmanFord.new('g3.txt').shortest_paths(1)
+Johnson.new('test1.txt').shortest_path
 puts 'Done.'
