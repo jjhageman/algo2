@@ -1,3 +1,17 @@
+require 'debugger'
+require 'csv'
+require 'set'
+require 'progressbar'
+
+class Edge
+  attr :u, :v, :w
+  def initialize(u,v,w)
+    @u = u
+    @v = v
+    @w = w
+  end
+end
+
 class BellmanFord
   attr :edges, :A
   def initialize(file)
@@ -48,3 +62,6 @@ class BellmanFord
     response
   end
 end
+bf = BellmanFord.new('test2.txt').shortest_paths(1)
+puts "Shortest paths: #{bf.inspect}"
+puts 'Done'

@@ -70,10 +70,20 @@ class FloydWarshall
       pbar2.inc
     end
     pbar2.finish
-    @A
+    #shortest = Float::INFINITY
+    (1..@graph.num_vertices).each do |i|
+      (1..@graph.num_vertices).each do |j|
+        #if @A[i][j][@graph.num_vertices] < shortest
+          #shortest = @A[i][j][@graph.num_vertices]
+        #end
+        print "#{@A[i][j][@graph.num_vertices]}"
+        print ', ' unless j == @graph.num_vertices
+      end
+      puts ' '
+    end
+    #puts "Shortest path length: #{shortest}, between #{shortest_u} and #{shortest_v}. "
   end
 end
 
-fw = FloydWarshall.new('test2.txt').shortest_paths
-debugger
+fw = FloydWarshall.new('test2_twea.txt').shortest_paths
 puts 'Done'
