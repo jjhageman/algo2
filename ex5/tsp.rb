@@ -1,6 +1,5 @@
 require 'debugger'
 require 'csv'
-require 'set'
 require 'progressbar'
 
 class City
@@ -60,36 +59,43 @@ class Tsp
   def min_cost
     pbar = ProgressBar.new("min cost", @num_cities)
     i = @num_cities-1
+    key_counter=Array.new(@num_cities){0}
+    prev_a = {}
     (1..i).each do |m|
       first_binary = (('0'*(i-m))+('1'*m)).to_i(2)
       last_binary = (('1'*m)+('0'*(i-m))).to_i(2)
+      next_a = {}
       while first_binary <= last_binary do
         ("%0#{i}b"%first_binary).split("").reverse.each.with_index do |c,position|
           if c == '1'
             j = position+1
             s_sub_j = first_binary & ~(1<<position)
             if s_sub_j == 0
-              @A[first_binary] = {(j+1) => @D[1][j+1]}
+              key_counter[m] += 1
+              next_a[first_binary] = {(j+1) => @D[1][j+1]}
             else
               min = Float::INFINITY
               ("%0#{i}b"%s_sub_j).split("").reverse.each.with_index do |s,p|
                 if s == '1'
                   k = p+1
-                  temp = (k == 1) ? Float::INFINITY : (@A[s_sub_j][k+1] + @D[k+1][j+1])
+                  temp = (k == 1) ? Float::INFINITY : (prev_a[s_sub_j][k+1] + @D[k+1][j+1])
                   debugger unless temp
                   min = temp if temp < min
                 end
               end
-              if @A[first_binary]
-                @A[first_binary][j+1] = min
+              if next_a[first_binary]
+                next_a[first_binary][j+1] = min
               else
-                @A[first_binary] = {(j+1) => min}
+                key_counter[m] += 1
+                next_a[first_binary] = {(j+1) => min}
               end
             end
           end
         end
         first_binary = next_pattern first_binary
       end
+      prev_a.clear
+      prev_a = next_a.dup
       pbar.inc
     end
     pbar.finish
@@ -97,12 +103,12 @@ class Tsp
     min = Float::INFINITY
     n_index = ('1'*i).to_i(2)
     (2..@num_cities).each do |j|
-      temp = @A[n_index][j] + @D[1][j]
+      temp = prev_a[n_index][j] + @D[1][j]
       min = temp if temp < min
     end
     min
   end
 end
-mc = Tsp.new('tsp.txt').min_cost
+mc = Tsp.new('test1.txt').min_cost
 puts "Min travel cost: #{mc}"
 puts 'Done.'
